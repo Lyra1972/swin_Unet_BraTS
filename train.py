@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 from networks.vision_transformer import SwinUnet as ViT_seg
-from trainer import trainer_synapse
+from trainer import trainer_BraTS
 from config import get_config
 
 parser = argparse.ArgumentParser()
@@ -15,7 +15,7 @@ parser.add_argument('--root_path', type=str,
 parser.add_argument('--dataset', type=str,
                     default='BraTS', help='experiment_name')                       # default='Synapse'
 parser.add_argument('--list_dir', type=str,
-                    default='./lists/lists_Synapse', help='list dir')
+                    default='./lists/list_BraTS', help='list dir')              # default='./lists/lists_Synapse'
 parser.add_argument('--num_classes', type=int,
                     default=4, help='output channel of network')                   # default=9
 parser.add_argument('--output_dir', type=str, help='output dir')                   
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         },
         'Synapse': {
             'root_path': args.root_path,
-            'list_dir': './lists/lists_Synapse', 
+            'list_dir': './lists/list_Synapse', 
             'num_classes': 9, 
         },
     }
@@ -100,5 +100,5 @@ if __name__ == "__main__":
     net = ViT_seg(config, img_size=args.img_size, num_classes=args.num_classes).cuda()
     net.load_from(config)
 
-    trainer = {'Synapse': trainer_synapse,}
+    trainer = {'BraTS': trainer_BraTS,}
     trainer[dataset_name](args, net, args.output_dir)

@@ -24,7 +24,7 @@ if [$data_dir]
 then
     DATA_DIR = $data_dir
 else
-    DATA_DIR = 'datasets/Synapse'
+    DATA_DIR = 'datasets/BraTS'    #'datasets/Synapse'
 fi
 
 if [$learning_rate]
@@ -49,4 +49,4 @@ else
 fi
 
 echo "start test model"
-pyhton test.py --dataset Synapse --cfg $CFG --is_saveni --volume_path $DATA_DIR --max_epochs $EPOCH_TIME --output_dir $OUT_DIR --img_size $IMG_SIZE --base_lr $LEARNING_RATE --batch_size $BATCH_SIZE
+pyhton test.py --dataset BraTS --cfg $CFG --is_saveni --volume_path $DATA_DIR --max_epochs $EPOCH_TIME --output_dir $OUT_DIR --img_size $IMG_SIZE --base_lr $LEARNING_RATE --batch_size $BATCH_SIZE

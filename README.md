@@ -1,7 +1,3 @@
-# Swin-Unet for BraTS
-
-The projects will use the pure transformer architecture, Swin Unet on the MICCAI BraTS dataset to perform a brain tumor segmentation task
-
 # Swin-Unet
 The codes for the work "Swin-Unet: Unet-like Pure Transformer for Medical Image Segmentation"(https://arxiv.org/abs/2105.05537). A validation for U-shaped Swin Transformer.
 

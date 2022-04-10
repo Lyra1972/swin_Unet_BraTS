@@ -9,21 +9,21 @@ import torch.backends.cudnn as cudnn
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from datasets.dataset_synapse import Synapse_dataset
+from datasets.dataset_BraTS import BraTS_dataset
 from utils import test_single_volume
 from networks.vision_transformer import SwinUnet as ViT_seg
-from trainer import trainer_synapse
+from trainer import trainer_BraTS
 from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--volume_path', type=str,
-                    default='../data/Synapse/test_vol_h5', help='root dir for validation volume data')  # for acdc volume_path=root_dir
+                    default='../data/BraTS/test_vol_h5', help='root dir for validation volume data')  # for acdc volume_path=root_dir
 parser.add_argument('--dataset', type=str,
-                    default='Synapse', help='experiment_name')
+                    default='BraTS', help='experiment_name')
 parser.add_argument('--num_classes', type=int,
                     default=9, help='output channel of network')
 parser.add_argument('--list_dir', type=str,
-                    default='./lists/lists_Synapse', help='list dir')
+                    default='./lists/list_BraTS', help='list dir')
 parser.add_argument('--output_dir', type=str, help='output dir')   
 parser.add_argument('--max_iterations', type=int,default=30000, help='maximum epoch number to train')
 parser.add_argument('--max_epochs', type=int, default=150, help='maximum epoch number to train')
@@ -58,7 +58,7 @@ parser.add_argument('--eval', action='store_true', help='Perform evaluation only
 parser.add_argument('--throughput', action='store_true', help='Test throughput only')
 
 args = parser.parse_args()
-if args.dataset == "Synapse":
+if args.dataset == "BraTS":
     args.volume_path = os.path.join(args.volume_path, "test_vol_h5")
 config = get_config(args)
 
@@ -99,6 +99,13 @@ if __name__ == "__main__":
     torch.cuda.manual_seed(args.seed)
 
     dataset_config = {
+        'BraTS': {
+            'Dataset': BraTS_dataset,
+            'volume_path': args.volume_path,
+            'list_dir': './lists/list_BraTS',
+            'num_classes': 4,
+            'z_spacing': 1,
+        },
         'Synapse': {
             'Dataset': Synapse_dataset,
             'volume_path': args.volume_path,
