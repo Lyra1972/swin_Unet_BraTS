@@ -1,3 +1,4 @@
-# swin-Unet for Brain Tumor Segmentation Task
+# Pure Transformer Network for Brain Tumor Segmentation Task
 
 Dataset: MICCAI BraTS
+Network: Swin-Unet
