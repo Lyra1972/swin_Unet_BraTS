@@ -1,1 +1,3 @@
-# swin_Unet_BraTS
+# swin-Unet for Brain Tumor Segmentation Task
+
+Dataset: MICCAI BraTS
