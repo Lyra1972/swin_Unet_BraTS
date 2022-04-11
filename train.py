@@ -11,7 +11,7 @@ from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
-                    default='../data/BraTS/train_npz', help='root dir for data')   # '../data/Synapse/train_npz'
+                    default='data/BraTS', help='root dir for data')   # '../data/Synapse/train_npz'
 parser.add_argument('--dataset', type=str,
                     default='BraTS', help='experiment_name')                       # default='Synapse'
 parser.add_argument('--list_dir', type=str,
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         'BraTS': {
             'root_path': args.root_path,
             'list_dir': './lists/list_BraTS',  
-            'num_classes': 4,
+            'num_classes': 5,
         },
         'Synapse': {
             'root_path': args.root_path,

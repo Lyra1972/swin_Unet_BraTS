@@ -17,7 +17,9 @@ from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--volume_path', type=str,
-                    default='../data/BraTS/test_vol_h5', help='root dir for validation volume data')  # for acdc volume_path=root_dir
+                    default='data/BraTS', help='root dir for validation volume data')  
+                    # volume_path = base_dir in BraTS_dataset, default='../data/BraTS/test_vol_h5'
+
 parser.add_argument('--dataset', type=str,
                     default='BraTS', help='experiment_name')
 parser.add_argument('--num_classes', type=int,
@@ -103,7 +105,7 @@ if __name__ == "__main__":
             'Dataset': BraTS_dataset,
             'volume_path': args.volume_path,
             'list_dir': './lists/list_BraTS',
-            'num_classes': 4,
+            'num_classes': 5,
             'z_spacing': 1,
         },
         'Synapse': {
