@@ -105,7 +105,7 @@ if __name__ == "__main__":
             'Dataset': BraTS_dataset,
             'volume_path': args.volume_path,
             'list_dir': './lists/list_BraTS',
-            'num_classes': 5,
+            'num_classes': 4,
             'z_spacing': 1,
         },
         'Synapse': {

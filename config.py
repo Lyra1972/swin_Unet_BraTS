@@ -35,8 +35,8 @@ _C.DATA.ZIP_MODE = False
 _C.DATA.CACHE_MODE = 'part'
 # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.
 _C.DATA.PIN_MEMORY = True
-# Number of data loading threads
-_C.DATA.NUM_WORKERS = 8
+# Number of data loading threads (8 on my own laptop, 2 on colab)
+_C.DATA.NUM_WORKERS = 2
 
 # -----------------------------------------------------------------------------
 # Model settings

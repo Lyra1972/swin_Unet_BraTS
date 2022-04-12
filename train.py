@@ -80,7 +80,7 @@ if __name__ == "__main__":
         'BraTS': {
             'root_path': args.root_path,
             'list_dir': './lists/list_BraTS',  
-            'num_classes': 5,
+            'num_classes': 4,
         },
         'Synapse': {
             'root_path': args.root_path,
