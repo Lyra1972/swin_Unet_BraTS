@@ -38,11 +38,13 @@ class DiceLoss(nn.Module):
         assert inputs.size() == target.size(), 'predict {} & target {} shape do not match'.format(inputs.size(), target.size())
         class_wise_dice = []
         loss = 0.0
+        dice_class = []
         for i in range(0, self.n_classes):
             dice = self._dice_loss(inputs[:, i], target[:, i])
+            dice_class.append(dice.item())
             class_wise_dice.append(1.0 - dice.item())
             loss += dice * weight[i]
-        return loss / self.n_classes
+        return dice_class, loss / sum(weight) # self.n_classes
 
 
 def calculate_metric_percase(pred, gt):

@@ -55,8 +55,8 @@ def trainer_synapse(args, model, snapshot_path):
             image_batch, label_batch = image_batch.cuda(), label_batch.cuda()
             outputs = model(image_batch)
             loss_ce = ce_loss(outputs, label_batch[:].long())
-            loss_dice = dice_loss(outputs, label_batch, softmax=True)
-            loss = 0.4 * loss_ce + 0.6 * loss_dice
+            dice_class, loss_dice = dice_loss(outputs, label_batch,weight=[1,2,2,2], softmax=True)
+            loss = 0.2 * loss_ce + 0.8 * loss_dice
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -65,12 +65,18 @@ def trainer_synapse(args, model, snapshot_path):
                 param_group['lr'] = lr_
 
             iter_num = iter_num + 1
+            
             writer.add_scalar('info/lr', lr_, iter_num)
             writer.add_scalar('info/total_loss', loss, iter_num)
             writer.add_scalar('info/loss_ce', loss_ce, iter_num)
             writer.add_scalar('info/loss_dice', loss_dice, iter_num)
-
-            logging.info('iteration %d : loss : %f, loss_ce: %f, loss_dice: %f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item()))
+            writer.add_scalar('info/class_0', dice_class[0], iter_num)
+            writer.add_scalar('info/class_1', dice_class[1], iter_num)
+            writer.add_scalar('info/class_2', dice_class[2], iter_num)
+            writer.add_scalar('info/class_3', dice_class[3], iter_num)
+            
+            if iter_num % 5 == 0:
+                logging.info('iteration %d : loss : %f, loss_ce: %f, loss_dice: %f, class_loss %f_%f_%f_%f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item(), dice_class[0], dice_class[1], dice_class[2], dice_class[3]))
 
             if iter_num % 20 == 0:
                 image = image_batch[1, 0:1, :, :]
@@ -136,8 +142,8 @@ def trainer_BraTS(args, model, snapshot_path):
             image_batch, label_batch = image_batch.cuda(), label_batch.cuda()
             outputs = model(image_batch)
             loss_ce = ce_loss(outputs, label_batch[:].long())
-            loss_dice = dice_loss(outputs, label_batch, softmax=True)
-            loss = 0.4 * loss_ce + 0.6 * loss_dice
+            dice_class, loss_dice = dice_loss(outputs, label_batch,weight=[1,2,2,2], softmax=True)
+            loss = 0.2 * loss_ce + 0.8 * loss_dice
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -150,8 +156,13 @@ def trainer_BraTS(args, model, snapshot_path):
             writer.add_scalar('info/total_loss', loss, iter_num)
             writer.add_scalar('info/loss_ce', loss_ce, iter_num)
             writer.add_scalar('info/loss_dice', loss_dice, iter_num)
-
-            logging.info('iteration %d : loss : %f, loss_ce: %f, loss_dice: %f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item()))
+            writer.add_scalar('info/class_0', dice_class[0], iter_num)
+            writer.add_scalar('info/class_1', dice_class[1], iter_num)
+            writer.add_scalar('info/class_2', dice_class[2], iter_num)
+            writer.add_scalar('info/class_3', dice_class[3], iter_num)
+            
+            if iter_num % 5 == 0:
+                logging.info('iteration %d : loss : %f, loss_ce: %f, loss_dice: %f, class_loss %f_%f_%f_%f' % (iter_num, loss.item(), loss_ce.item(), loss_dice.item(), dice_class[0], dice_class[1], dice_class[2], dice_class[3]))
 
             if iter_num % 20 == 0:
                 image = image_batch[1, 0:1, :, :]
