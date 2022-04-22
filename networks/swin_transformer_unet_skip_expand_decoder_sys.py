@@ -27,7 +27,8 @@ class Mlp(nn.Module):
 def window_partition(x, window_size):
     """
     Args:
-        x: (B, H, W, C)
+        x: (B, H, W, C) 
+        B, H, W, C:  batch_size , hight, width, channels
         window_size (int): window size
 
     Returns:
@@ -513,12 +514,12 @@ class PatchEmbed(nn.Module):
     Args:
         img_size (int): Image size.  Default: 224.
         patch_size (int): Patch token size. Default: 4.
-        in_chans (int): Number of input image channels. Default: 3.
+        in_chans (int): Number of input image channels. Default: 4.
         embed_dim (int): Number of linear projection output channels. Default: 96.
         norm_layer (nn.Module, optional): Normalization layer. Default: None
     """
 
-    def __init__(self, img_size=224, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
+    def __init__(self, img_size=224, patch_size=4, in_chans=4, embed_dim=96, norm_layer=None):
         super().__init__()
         img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
@@ -542,6 +543,7 @@ class PatchEmbed(nn.Module):
         # FIXME look at relaxing size constraints
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
+ 
         x = self.proj(x).flatten(2).transpose(1, 2)  # B Ph*Pw C
         if self.norm is not None:
             x = self.norm(x)
@@ -563,7 +565,7 @@ class SwinTransformerSys(nn.Module):
     Args:
         img_size (int | tuple(int)): Input image size. Default 224
         patch_size (int | tuple(int)): Patch size. Default: 4
-        in_chans (int): Number of input image channels. Default: 3
+        in_chans (int): Number of input image channels. Default: 4
         num_classes (int): Number of classes for classification head. Default: 1000
         embed_dim (int): Patch embedding dimension. Default: 96
         depths (tuple(int)): Depth of each Swin Transformer layer.
@@ -581,14 +583,14 @@ class SwinTransformerSys(nn.Module):
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False
     """
 
-    def __init__(self, img_size=224, patch_size=4, in_chans=3, num_classes=1000,
+    def __init__(self, img_size=224, patch_size=4, in_chans=4, num_classes=1000,
                  embed_dim=96, depths=[2, 2, 2, 2], depths_decoder=[1, 2, 2, 2], num_heads=[3, 6, 12, 24],
                  window_size=7, mlp_ratio=4., qkv_bias=True, qk_scale=None,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
                  use_checkpoint=False, final_upsample="expand_first", **kwargs):
         super().__init__()
-
+        
         print("SwinTransformerSys expand initial----depths:{};depths_decoder:{};drop_path_rate:{};num_classes:{}".format(depths,
         depths_decoder,drop_path_rate,num_classes))
 
@@ -603,6 +605,7 @@ class SwinTransformerSys(nn.Module):
         self.final_upsample = final_upsample
 
         # split image into non-overlapping patches
+        # print('..........', in_chans)
         self.patch_embed = PatchEmbed(
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,
             norm_layer=norm_layer if self.patch_norm else None)

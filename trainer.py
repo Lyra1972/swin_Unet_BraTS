@@ -16,9 +16,10 @@ from utils import DiceLoss
 from torchvision import transforms
 from utils import test_single_volume
 
-def trainer_synapse(args, model, snapshot_path):
+def trainer_synapse(args, model, snapshot_path, name):
     from datasets.dataset_synapse import Synapse_dataset, RandomGenerator
-    logging.basicConfig(filename=snapshot_path + "/log.txt", level=logging.INFO,
+    path = os.path.join(snapshot_path, name)
+    logging.basicConfig(filename=path + "log.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info(str(args))
@@ -42,13 +43,13 @@ def trainer_synapse(args, model, snapshot_path):
     ce_loss = CrossEntropyLoss()
     dice_loss = DiceLoss(num_classes)
     optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0001)
-    writer = SummaryWriter(snapshot_path + '/log')
+    writer = SummaryWriter(path)
     iter_num = 0
     max_epoch = args.max_epochs
     max_iterations = args.max_epochs * len(trainloader)  # max_epoch = max_iterations // len(trainloader) + 1
     logging.info("{} iterations per epoch. {} max iterations ".format(len(trainloader), max_iterations))
     best_performance = 0.0
-    iterator = tqdm(range(max_epoch), ncols=70)
+    iterator = tqdm(range(1, max_epoch+1), ncols=70)
     for epoch_num in iterator:
         for i_batch, sampled_batch in enumerate(trainloader):
             image_batch, label_batch = sampled_batch['image'], sampled_batch['label']
@@ -89,12 +90,12 @@ def trainer_synapse(args, model, snapshot_path):
 
         save_interval = 50  # int(max_epoch/6)
         if epoch_num > int(max_epoch / 2) and (epoch_num + 1) % save_interval == 0:
-            save_mode_path = os.path.join(snapshot_path, 'epoch_' + str(epoch_num) + '.pth')
+            save_mode_path = os.path.join(snapshot_path, name + '_epoch_' + str(epoch_num) + '.pth')
             torch.save(model.state_dict(), save_mode_path)
             logging.info("save model to {}".format(save_mode_path))
 
         if epoch_num >= max_epoch - 1:
-            save_mode_path = os.path.join(snapshot_path, 'epoch_' + str(epoch_num) + '.pth')
+            save_mode_path = os.path.join(snapshot_path, name + '_epoch_' + str(epoch_num) + '.pth')
             torch.save(model.state_dict(), save_mode_path)
             logging.info("save model to {}".format(save_mode_path))
             iterator.close()
@@ -103,9 +104,20 @@ def trainer_synapse(args, model, snapshot_path):
     writer.close()
     return "Training Finished!"
 
-def trainer_BraTS(args, model, snapshot_path):
+def trainer_BraTS(args, model, snapshot_path, name):
     from datasets.dataset_BraTS import BraTS_dataset, RandomGenerator
-    logging.basicConfig(filename=snapshot_path + "/log.txt", level=logging.INFO,
+    path = os.path.join(snapshot_path, name + '/')
+    print('=================', path)
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print('Create file named', name)
+    else:
+        name = name + '1'
+        path = os.path.join(snapshot_path, name)
+        os.makedirs(path)
+        print('create', name)
+
+    logging.basicConfig(filename=path + "log.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     logging.info(str(args))
@@ -129,7 +141,7 @@ def trainer_BraTS(args, model, snapshot_path):
     ce_loss = CrossEntropyLoss()
     dice_loss = DiceLoss(num_classes)
     optimizer = optim.SGD(model.parameters(), lr=base_lr, momentum=0.9, weight_decay=0.0001)
-    writer = SummaryWriter(snapshot_path + '/log')
+    writer = SummaryWriter(path + 'log')
     iter_num = 0
     max_epoch = args.max_epochs
     max_iterations = args.max_epochs * len(trainloader)  # max_epoch = max_iterations // len(trainloader) + 1
@@ -173,14 +185,14 @@ def trainer_BraTS(args, model, snapshot_path):
                 labs = label_batch[1, ...].unsqueeze(0) * 50
                 writer.add_image('train/GroundTruth', labs, iter_num)
 
-        save_interval = 50  # int(max_epoch/6)
+        save_interval = 30  # int(max_epoch/6)
         if epoch_num > int(max_epoch / 2) and (epoch_num + 1) % save_interval == 0:
-            save_mode_path = os.path.join(snapshot_path, 'epoch_' + str(epoch_num) + '.pth')
+            save_mode_path = os.path.join(snapshot_path, name, 'epoch_' + str(epoch_num) + '.pth')
             torch.save(model.state_dict(), save_mode_path)
             logging.info("save model to {}".format(save_mode_path))
 
-        if epoch_num >= max_epoch - 1:
-            save_mode_path = os.path.join(snapshot_path, 'epoch_' + str(epoch_num) + '.pth')
+        if epoch_num >= max_epoch:
+            save_mode_path = os.path.join(snapshot_path, name, 'epoch_' + str(epoch_num) + '.pth')
             torch.save(model.state_dict(), save_mode_path)
             logging.info("save model to {}".format(save_mode_path))
             iterator.close()

@@ -11,14 +11,16 @@ from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
-                    default='data/BraTS', help='root dir for data')   # '../data/Synapse/train_npz'
+                    default='data/BraTS', help='root dir for data')             # '../data/Synapse/train_npz'
 parser.add_argument('--dataset', type=str,
-                    default='BraTS', help='experiment_name')                       # default='Synapse'
+                    default='BraTS', help='experiment_name')                    # default='Synapse'
 parser.add_argument('--list_dir', type=str,
                     default='./lists/list_BraTS', help='list dir')              # default='./lists/lists_Synapse'
 parser.add_argument('--num_classes', type=int,
-                    default=4, help='output channel of network')                   # default=9
-parser.add_argument('--output_dir', type=str, help='output dir')                   
+                    default=4, help='output channel of network')                # default=9
+parser.add_argument('--output_dir', type=str, default='traning/', help='output dir') 
+parser.add_argument('--save_name', type=str,
+                    default=' ', help='save name') 
 parser.add_argument('--max_iterations', type=int,
                     default=30000, help='maximum epoch number to train')
 parser.add_argument('--max_epochs', type=int,
@@ -30,6 +32,8 @@ parser.add_argument('--deterministic', type=int,  default=1,
                     help='whether use deterministic training')
 parser.add_argument('--base_lr', type=float,  default=0.01,
                     help='segmentation network learning rate')
+parser.add_argument('--in_chans', type=int,  default=4,
+                    help='input channels')
 parser.add_argument('--img_size', type=int,
                     default=224, help='input patch size of network input')
 parser.add_argument('--seed', type=int,
@@ -88,7 +92,7 @@ if __name__ == "__main__":
             'num_classes': 9, 
         },
     }
-
+    
     if args.batch_size != 24 and args.batch_size % 6 == 0:
         args.base_lr *= args.batch_size / 24
     args.num_classes = dataset_config[dataset_name]['num_classes']
@@ -97,8 +101,8 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    net = ViT_seg(config, img_size=args.img_size, num_classes=args.num_classes).cuda()
+    net = ViT_seg(config, in_chans=args.in_chans, num_classes=args.num_classes).cuda()
     net.load_from(config)
 
     trainer = {'BraTS': trainer_BraTS,}
-    trainer[dataset_name](args, net, args.output_dir)
+    trainer[dataset_name](args, net, args.output_dir, args.save_name)

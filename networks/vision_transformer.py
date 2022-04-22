@@ -21,11 +21,13 @@ from .swin_transformer_unet_skip_expand_decoder_sys import SwinTransformerSys
 logger = logging.getLogger(__name__)
 
 class SwinUnet(nn.Module):
-    def __init__(self, config, img_size=224, num_classes=21843, zero_head=False, vis=False):
+    def __init__(self, config, img_size=224, in_chans=4, num_classes=21843, zero_head=False, vis=False):
         super(SwinUnet, self).__init__()
         self.num_classes = num_classes
         self.zero_head = zero_head
         self.config = config
+        self.in_chans = in_chans
+        # print('.....chan.....', config.MODEL.SWIN.IN_CHANS)
 
         self.swin_unet = SwinTransformerSys(img_size=config.DATA.IMG_SIZE,
                                 patch_size=config.MODEL.SWIN.PATCH_SIZE,
@@ -45,8 +47,12 @@ class SwinUnet(nn.Module):
                                 use_checkpoint=config.TRAIN.USE_CHECKPOINT)
 
     def forward(self, x):
+        
         if x.size()[1] == 1:
-            x = x.repeat(1,3,1,1)
+            # if input size = [224,224], x = [48, 1, 224, 224], x = [48, 3, 224, 224]
+            # if input size = [4, 224,224], x = [48, 4, 224, 224], can't enter if loop
+            x = x.repeat(1,4,1,1)  
+            
         logits = self.swin_unet(x)
         return logits
 
@@ -64,7 +70,6 @@ class SwinUnet(nn.Module):
                         print("delete key:{}".format(k))
                         del pretrained_dict[k]
                 msg = self.swin_unet.load_state_dict(pretrained_dict,strict=False)
-                # print(msg)
                 return
             pretrained_dict = pretrained_dict['model']
             print("---start load pretrained modle of swin encoder---")
@@ -83,7 +88,6 @@ class SwinUnet(nn.Module):
                         del full_dict[k]
 
             msg = self.swin_unet.load_state_dict(full_dict, strict=False)
-            # print(msg)
         else:
             print("none pretrain")
  
