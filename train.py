@@ -6,12 +6,13 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 from networks.vision_transformer import SwinUnet as ViT_seg
-from trainer import trainer_BraTS
+from networks.vision_transformer import SwinUnet3D as ViT_seg3D
+from trainer import trainer_BraTS, trainer_BraTS3D
 from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
-                    default='data/BraTS', help='root dir for data')             # '../data/Synapse/train_npz'
+                    default='data/BraTS_3D', help='root dir for data')             # '../data/Synapse/train_npz'
 parser.add_argument('--dataset', type=str,
                     default='BraTS', help='experiment_name')                    # default='Synapse'
 parser.add_argument('--list_dir', type=str,
@@ -32,13 +33,13 @@ parser.add_argument('--deterministic', type=int,  default=1,
                     help='whether use deterministic training')
 parser.add_argument('--base_lr', type=float,  default=0.01,
                     help='segmentation network learning rate')
-parser.add_argument('--in_chans', type=int,  default=4,
-                    help='input channels')
+parser.add_argument('--in_chans', type=int,  default=4, help='input channels')
+parser.add_argument('--mode', type=str,  default='twoD', help='model mode, twoD/threeD')
 parser.add_argument('--img_size', type=int,
                     default=224, help='input patch size of network input')
 parser.add_argument('--seed', type=int,
                     default=1234, help='random seed')
-parser.add_argument('--cfg', type=str, required=True, metavar="FILE", help='path to config file', )
+parser.add_argument('--cfg', type=str, metavar="FILE", help='path to config file') # required=True
 parser.add_argument(
         "--opts",
         help="Modify config options by adding 'KEY VALUE' pairs. ",
@@ -61,7 +62,7 @@ parser.add_argument('--eval', action='store_true', help='Perform evaluation only
 parser.add_argument('--throughput', action='store_true', help='Test throughput only')
 
 args = parser.parse_args()
-if args.dataset == "BraTS":    # Synapse
+if args.dataset == "BraTS" or args.dataset == "BraTS_3D":        # Synapse
     args.root_path = os.path.join(args.root_path, "train_npz")
 config = get_config(args)
 
@@ -83,13 +84,15 @@ if __name__ == "__main__":
     dataset_config = {
         'BraTS': {
             'root_path': args.root_path,
-            'list_dir': './lists/list_BraTS',  
+            'list_dir': './lists/list_BraTS',
+            #'root_path': './data/BraTS',
             'num_classes': 4,
         },
-        'Synapse': {
+        'BraTS_3D': {
             'root_path': args.root_path,
-            'list_dir': './lists/list_Synapse', 
-            'num_classes': 9, 
+            'list_dir': './lists/list_BraTS3D',
+            #'root_path': './data/BraTS_3D',
+            'num_classes': 4, 
         },
     }
     
@@ -101,8 +104,11 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    net = ViT_seg(config, in_chans=args.in_chans, num_classes=args.num_classes).cuda()
+    if args.mode == 'twoD':
+        net = ViT_seg(config, in_chans=args.in_chans, num_classes=args.num_classes).cuda()
+    elif args.mode == 'threeD':
+        net = ViT_seg3D(config, in_chans=args.in_chans,num_classes=args.num_classes).cuda()
     net.load_from(config)
 
-    trainer = {'BraTS': trainer_BraTS,}
+    trainer = {'BraTS': trainer_BraTS,'BraTS_3D':trainer_BraTS3D}
     trainer[dataset_name](args, net, args.output_dir, args.save_name)

@@ -8,24 +8,29 @@ from scipy.ndimage.interpolation import zoom
 from torch.utils.data import Dataset
 
 
-def random_rot_flip(image, label):            # image size = (224, 224) or (4, 224, 224)
+def random_rot_flip(image, label):            # image size = (4, 50, 224, 224), label size = (50, 224, 224)
     k = np.random.randint(0, 4)
-    label = np.rot90(label, k)
-
     axis = np.random.randint(0, 2)
-    label = np.flip(label, axis=axis).copy()
+
+    for i in range(label.shape[0]):
+        label[i] = np.rot90(label[i], k)
+        label[i] = np.flip(label[i], axis=axis).copy()
+
     for i in range(image.shape[0]):
-        image[i] = np.rot90(image[i], k)
-        image[i] = np.flip(image[i], axis=axis).copy()
+        for j in range(image.shape[1]):
+            image[i][j] = np.rot90(image[i][j], k)
+            image[i][j] = np.flip(image[i][j], axis=axis).copy()
 
     return image, label
 
 
-def random_rotate(image, label):            # image size = (224, 224) or (4, 224, 224)
-    angle = np.random.randint(-25, 25)
+def random_rotate(image, label):            # image size = (4, 50, 224, 224), label size = (50, 224, 224)
+    angle = np.random.randint(-15, 15)
     for i in range(image.shape[0]):
-        image[i] = ndimage.rotate(image[i], angle, order=0, reshape=False).copy()
-    label = ndimage.rotate(label, angle, order=0, reshape=False).copy()
+        for j in range(image.shape[1]):
+            image[i][j] = ndimage.rotate(image[i][j], angle, order=0, reshape=False).copy()
+    for i in range(label.shape[0]):
+        label[i] = ndimage.rotate(label[i], angle, order=0, reshape=False).copy()
     return image, label
 
 
@@ -34,18 +39,13 @@ class RandomGenerator(object):
         self.output_size = output_size
 
     def __call__(self, sample):
-        image, label = sample['image'], sample['label']      # image size = (224, 224) or (4, 224, 224)
-        img_dim = len(image.shape)
+        image, label = sample['image'], sample['label']    # image size = (4, 50, 224, 224), label size = (50, 224, 224)     
         
-        if img_dim == 2:
-            image = image[np.newaxis, :]           # expand image to (1, x, y)
-        
-        image, label = random_rotate(image, label)
-        
-        if random.random() > 0.5:
+        if random.random() > 0.6:
+            image, label = random_rotate(image, label)
             image, label = random_rot_flip(image, label)
-    
-        x, y = image.shape[1:]
+            
+        x, y = image.shape[2:]
             
         if x != self.output_size[0] or y != self.output_size[1]:
             # order 0 = Nearest neighbor upsampling, fill with neighbor's value
@@ -60,7 +60,7 @@ class RandomGenerator(object):
         return sample
 
 
-class BraTS_dataset(Dataset):
+class BraTS_dataset3D(Dataset):
     def __init__(self, base_dir, list_dir, split, transform=None):   # list_dir = 'lists/list_BraTS/'
         self.transform = transform  # using transform in torch!
         self.split = split
@@ -87,3 +87,4 @@ class BraTS_dataset(Dataset):
             sample = self.transform(sample)
         sample['case_name'] = self.sample_list[idx].strip('\n')
         return sample
+

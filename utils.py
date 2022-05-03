@@ -32,7 +32,9 @@ class DiceLoss(nn.Module):
     def forward(self, inputs, target, weight=None, softmax=False):
         if softmax:
             inputs = torch.softmax(inputs, dim=1)
-        target = self._one_hot_encoder(target)
+            
+        # [48,224,224] -> [48,4,224,224], convert 1 label channel into 4(No. of class) channels
+        target = self._one_hot_encoder(target) 
         if weight is None:
             weight = [1] * self.n_classes
         assert inputs.size() == target.size(), 'predict {} & target {} shape do not match'.format(inputs.size(), target.size())
@@ -44,32 +46,60 @@ class DiceLoss(nn.Module):
             dice_class.append(dice.item())
             class_wise_dice.append(1.0 - dice.item())
             loss += dice * weight[i]
-        return dice_class, loss / sum(weight) # self.n_classes
+        return dice_class, loss / self.n_classes  #sum(weight)
 
 
 def calculate_metric_percase(pred, gt):
     pred[pred > 0] = 1
     gt[gt > 0] = 1
+    dice = metric.binary.dc(pred, gt)
     if pred.sum() > 0 and gt.sum()>0:
-        dice = metric.binary.dc(pred, gt)
         hd95 = metric.binary.hd95(pred, gt)
         return dice, hd95
-    elif pred.sum() > 0 and gt.sum()==0:
-        return 1, 0
     else:
-        return 0, 0
+        return dice, 0
 
 
 def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_save_path=None, case=None, z_spacing=1):
+    # image.shape = (1, slice, 224, 224) or (1, 4, slice, 224, 224), label.shape = (1, slice, 224, 224)
     image, label = image.squeeze(0).cpu().detach().numpy(), label.squeeze(0).cpu().detach().numpy()
+    # image.shape = (slice, 224, 224) or (4, slice, 224, 224), label.shape = (slice, 224, 224)
+    
     if len(image.shape) == 3:
+        # image.shape = (slice, 224, 224), label.shape = (slice, 224, 224)
         prediction = np.zeros_like(label)
-        for ind in range(image.shape[0]):
-            slice = image[ind, :, :]
+        # prediction = np.zeros((label.shape[0],classes,224,224),dtype= np.int) # (slice, 4, 224, 224)
+
+        for ind in range(image.shape[0]):    
+            slice = image[ind, :, :]       # shape = (224, 224)
             x, y = slice.shape[0], slice.shape[1]
             if x != patch_size[0] or y != patch_size[1]:
                 slice = zoom(slice, (patch_size[0] / x, patch_size[1] / y), order=3)  # previous using 0
-            input = torch.from_numpy(slice).unsqueeze(0).unsqueeze(0).float().cuda()
+            input = torch.from_numpy(slice).unsqueeze(0).unsqueeze(0).float().cuda()  # shape = (1, 1, 224, 224)
+            net.eval()
+            with torch.no_grad():
+                outputs = net(input)   # output shape = (1, 4, 224, 224)
+                #out = torch.softmax(outputs, dim=1).squeeze(0)
+                out = torch.argmax(torch.softmax(outputs, dim=1), dim=1).squeeze(0)
+                out = out.cpu().detach().numpy()   # out shape = (224, 224)
+                
+                if x != patch_size[0] or y != patch_size[1]:
+                    pred = zoom(out, (x / patch_size[0], y / patch_size[1]), order=0)
+                else:
+                    pred = out
+                prediction[ind] = pred
+                
+    elif len(image.shape) == 4:
+        # image.shape = (4, slice, 224, 224), label.shape = (slice, 224, 224)
+        # print('--- enter multi ---', image.shape, label.shape)
+        image = image.transpose(1,0,2,3)      # shape=(slice,4,224,224) 
+        prediction = np.zeros_like(label)
+        for ind in range(image.shape[0]):
+            slice = image[ind, :, :, :]       # shape=(4,224,224) 
+            x, y = slice.shape[1], slice.shape[2]
+            if x != patch_size[0] or y != patch_size[1]:
+                slice = zoom(slice, (patch_size[0] / x, patch_size[1] / y), order=3)  # previous using 0
+            input = torch.from_numpy(slice).unsqueeze(0).float().cuda()       # input shape=(1,4,224,224) 
             net.eval()
             with torch.no_grad():
                 outputs = net(input)
@@ -88,7 +118,9 @@ def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_s
             out = torch.argmax(torch.softmax(net(input), dim=1), dim=1).squeeze(0)
             prediction = out.cpu().detach().numpy()
     metric_list = []
+   
     for i in range(1, classes):
+        # metric_list.append(calculate_metric_percase(prediction[i], label == i))
         metric_list.append(calculate_metric_percase(prediction == i, label == i))
 
     if test_save_path is not None:

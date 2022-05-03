@@ -61,12 +61,15 @@ _C.MODEL.LABEL_SMOOTHING = 0.1
 # Swin Transformer parameters
 _C.MODEL.SWIN = CN()
 _C.MODEL.SWIN.PATCH_SIZE = 4
+_C.MODEL.SWIN.PATCH_VIDEO_SIZE = (2,4,4)
 _C.MODEL.SWIN.IN_CHANS = 4
 _C.MODEL.SWIN.EMBED_DIM = 96
+_C.MODEL.SWIN.EMBED_VIDEO_DIM = 48
 _C.MODEL.SWIN.DEPTHS = [2, 2, 6, 2]
 _C.MODEL.SWIN.DECODER_DEPTHS = [2, 2, 6, 2]
 _C.MODEL.SWIN.NUM_HEADS = [3, 6, 12, 24]
 _C.MODEL.SWIN.WINDOW_SIZE = 7
+_C.MODEL.SWIN.WINDOW_VIDEO_SIZE = (2,7,7)
 _C.MODEL.SWIN.MLP_RATIO = 4.
 _C.MODEL.SWIN.QKV_BIAS = True
 _C.MODEL.SWIN.QK_SCALE = None
@@ -197,6 +200,8 @@ def update_config(config, args):
     # merge from specific arguments
     if args.batch_size:
         config.DATA.BATCH_SIZE = args.batch_size
+    if args.in_chans:
+        config.DATA.IN_CHANS = args.in_chans
     if args.zip:
         config.DATA.ZIP_MODE = True
     if args.cache_mode:
