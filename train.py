@@ -12,7 +12,7 @@ from config import get_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--root_path', type=str,
-                    default='data/BraTS_3D', help='root dir for data')             # '../data/Synapse/train_npz'
+                    default='data', help='root dir for data')             # '../data/Synapse/train_npz'
 parser.add_argument('--dataset', type=str,
                     default='BraTS', help='experiment_name')                    # default='Synapse'
 parser.add_argument('--list_dir', type=str,
@@ -62,8 +62,10 @@ parser.add_argument('--eval', action='store_true', help='Perform evaluation only
 parser.add_argument('--throughput', action='store_true', help='Test throughput only')
 
 args = parser.parse_args()
-if args.dataset == "BraTS" or args.dataset == "BraTS_3D":        # Synapse
-    args.root_path = os.path.join(args.root_path, "train_npz")
+if args.dataset == "BraTS" :      # Synapse
+    args.root_path = os.path.join(args.root_path, "BraTS/train_npz")   # train_npz
+elif args.dataset == "BraTS_3D":  
+    args.root_path = os.path.join(args.root_path, "BraTS_3D/train_npz")
 config = get_config(args)
 
 

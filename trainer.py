@@ -284,7 +284,7 @@ def trainer_BraTS3D(args, model, snapshot_path, name):
                 labs = label_batch[0, 0,...].unsqueeze(0) * 50
                 writer.add_image('train/GroundTruth', labs, iter_num)
 
-        save_interval = int(max_epoch/6)
+        save_interval = int(max_epoch/10)
         if epoch_num > 49 and (epoch_num + 1) % save_interval == 0:
             save_mode_path = os.path.join(snapshot_path, name, 'epoch_' + str(epoch_num) + '.pth')
             torch.save(model.state_dict(), save_mode_path)

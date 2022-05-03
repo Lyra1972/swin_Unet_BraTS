@@ -57,15 +57,16 @@ def calculate_metric_percase(pred, gt):
         hd95 = metric.binary.hd95(pred, gt)
         return dice, hd95
     else:
+        print('pred/gt == 0')
         return dice, 0
 
 
-def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_save_path=None, case=None, z_spacing=1):
+def test_single_volume(image, label, net, classes, mode, patch_size=[256, 256], test_save_path=None, case=None, z_spacing=1):
     # image.shape = (1, slice, 224, 224) or (1, 4, slice, 224, 224), label.shape = (1, slice, 224, 224)
     image, label = image.squeeze(0).cpu().detach().numpy(), label.squeeze(0).cpu().detach().numpy()
     # image.shape = (slice, 224, 224) or (4, slice, 224, 224), label.shape = (slice, 224, 224)
     
-    if len(image.shape) == 3:
+    if len(image.shape) == 3 and mode == 'twoD':
         # image.shape = (slice, 224, 224), label.shape = (slice, 224, 224)
         prediction = np.zeros_like(label)
         # prediction = np.zeros((label.shape[0],classes,224,224),dtype= np.int) # (slice, 4, 224, 224)
@@ -89,11 +90,31 @@ def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_s
                     pred = out
                 prediction[ind] = pred
                 
-    elif len(image.shape) == 4:
+    elif mode == 'threeD':
         # image.shape = (4, slice, 224, 224), label.shape = (slice, 224, 224)
         # print('--- enter multi ---', image.shape, label.shape)
-        image = image.transpose(1,0,2,3)      # shape=(slice,4,224,224) 
+        # image = image.transpose(1,0,2,3)      # shape=(slice,4,224,224) 
         prediction = np.zeros_like(label)
+        
+        x, y = image.shape[-2], image.shape[-1]
+        if x != patch_size[0] or y != patch_size[1]:
+            print('----- img size change! -----')
+            slice = zoom(slice, (patch_size[0] / x, patch_size[1] / y), order=3)  # previous using 0
+        input = torch.from_numpy(image).unsqueeze(0).float().cuda()       # input shape = (1,4,slice,224,224) 
+        net.eval()
+        with torch.no_grad():
+            outputs = net(input)
+            # print('----- output -----', input.shape, outputs.shape)
+            
+            out = torch.argmax(torch.softmax(outputs, dim=1), dim=1).squeeze(0)
+            out = out.cpu().detach().numpy()
+            if x != patch_size[0] or y != patch_size[1]:
+                pred = zoom(out, (x / patch_size[0], y / patch_size[1]), order=0)
+            else:
+                pred = out
+            prediction = pred    # pred.shape = (50, 160, 160)
+        
+        """
         for ind in range(image.shape[0]):
             slice = image[ind, :, :, :]       # shape=(4,224,224) 
             x, y = slice.shape[1], slice.shape[2]
@@ -110,6 +131,7 @@ def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_s
                 else:
                     pred = out
                 prediction[ind] = pred
+        """
     else:
         input = torch.from_numpy(image).unsqueeze(
             0).unsqueeze(0).float().cuda()
@@ -120,6 +142,7 @@ def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_s
     metric_list = []
    
     for i in range(1, classes):
+        # print('----- 111 -----', prediction.shape, label.shape)
         # metric_list.append(calculate_metric_percase(prediction[i], label == i))
         metric_list.append(calculate_metric_percase(prediction == i, label == i))
 
